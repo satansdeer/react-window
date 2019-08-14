@@ -2,9 +2,11 @@ import React from "react";
 import { FixedSizeList as List } from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 import InfiniteLoader from "react-window-infinite-loader";
+import throttle from "lodash/throttle";
 
 import "./index.css";
 
+const itemsCount = 500;
 let items = {};
 let requestCache = {};
 
@@ -13,6 +15,9 @@ const getUrl = (rows, start) =>
 
 const Row = ({ index, style }) => {
   const item = items[index];
+
+  if (index + 1 >= itemsCount) return null;
+
   return (
     <div className={index % 2 ? "ListItemOdd" : "ListItemEven"} style={style}>
       {item ? `${item.accentcity}: ${item.population}` : "Loading..."}
@@ -51,19 +56,21 @@ const loadMoreItems = (visibleStartIndex, visibleStopIndex) => {
     .catch(error => console.error("Error:", error));
 };
 
+const loadMoreItemsThrottled = throttle(loadMoreItems, 100);
+
 export default () => (
   <AutoSizer>
     {({ height, width }) => (
       <InfiniteLoader
         isItemLoaded={isItemLoaded}
-        loadMoreItems={loadMoreItems}
-        itemCount={1000}
+        loadMoreItems={loadMoreItemsThrottled}
+        itemCount={itemsCount}
       >
         {({ onItemsRendered, ref }) => (
           <List
             className="List"
             height={height}
-            itemCount={1000}
+            itemCount={itemsCount}
             itemSize={35}
             width={width}
             ref={ref}
